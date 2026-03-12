@@ -1,0 +1,22 @@
+python-dotenv
+groq
+elevenlabs
+appopener
+pywhatkit
+bs4
+pillow
+rich
+requests
+keyboard
+cohere
+googlesearch-python
+selenium
+mtranslate
+# pygame  # Commented out due to Windows/Python 3.14 compatibility issues
+edge-tts
+PyQt5
+webdriver-manager
+fastapi
+uvicorn[standard]
+pydantic
+python-multipart
