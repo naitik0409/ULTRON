@@ -16,9 +16,6 @@ env_vars = dotenv_values(".env")
 Username = env_vars.get("Username", "User")
 Assistantname = env_vars.get("Assistantname", "Assistant")
 
-# DefaultMessage = f""" {Username}: Hello {Assistantname}, How are you?
-# {Assistantname}: Welcome {Username}. I am doing well. How may I help you? """
-
 subprocess_list = []
 tts_process = None
 
@@ -135,48 +132,49 @@ async def process_ai_query(query: str) -> str:
 
 async def main():
     start_listener()
-    print(f"\n  Mic active. Press Ctrl+Shift+M to toggle sleep mode.\n")
+    print("  Jarvis — voice assistant")
+    print("  " + "-" * 40)
+    print("  Ctrl+Shift+M  toggle mic  |  say 'exit' to quit")
+    print()
 
     while True:
         try:
             if not is_active():
-                print(f"\r  Sleep mode. Press Ctrl+Shift+M to wake.", end="")
+                print("  . sleep mode (Ctrl+Shift+M to wake)")
                 while not is_active():
                     await asyncio.sleep(0.5)
-                print(f"\r  Mic active.                   ")
 
-            print(f"\nListening...")
+            print("  > Listening...")
             user_input = SpeechRecognition().strip()
 
             if not user_input:
                 continue
 
             if user_input.lower() in ["exit", "quit", "bye"]:
-                print(f"\n{Assistantname}: Goodbye, {Username}! Have a great day!")
+                print(f"\n  {Assistantname}: Goodbye, {Username}! Have a great day!")
                 save_chat_message("user", user_input)
                 save_chat_message("assistant", "Goodbye! Have a great day!")
                 break
 
-            print(f"\n{Username}: {user_input}")
+            print(f"\n  {Username}: {user_input}")
             save_chat_message("user", user_input)
-
-            print(f"\n{Assistantname} is thinking...")
 
             response = await process_ai_query(user_input)
 
             if response == "coding":
-                print(f"\n{Assistantname}: Launching Coding Agent...")
-                save_chat_message("assistant", "Launching Coding Agent")
+                print(f"  {Assistantname}: Entering coding mode...")
+                save_chat_message("assistant", "Entering coding mode")
                 try:
                     import Coding_agent.cli
                     Coding_agent.cli.main()
                 except Exception as e:
                     print(f"Coding Agent error: {e}")
+                print()
                 continue
 
             save_chat_message("assistant", response)
 
-            print(f"\n{Assistantname}: {response}")
+            print(f"  {Assistantname}: {response}")
 
             try:
                 await TextToSpeech(response)
@@ -184,10 +182,10 @@ async def main():
                 print(f"TTS Error: {e}")
 
         except KeyboardInterrupt:
-            print(f"\n\nGoodbye, {Username}!")
+            print(f"\n  Goodbye, {Username}!")
             break
         except Exception as e:
-            print(f"\nError: {e}")
+            print(f"\n  Error: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())

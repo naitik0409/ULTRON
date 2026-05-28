@@ -4,28 +4,6 @@ from .agentic_ai import CodingAgent
 from . import workflow as wf
 
 
-def print_banner(dir_path):
-    print()
-    print("  ULTRON Coding Agent")
-    print("  " + "-" * 50)
-    print(f"  Working in: {dir_path}")
-    print("  Commands: /exit  /read  /write  /list  /delete  /help")
-    print()
-
-
-def print_help():
-    print("  Natural language: describe what you want to build/edit/debug")
-    print("  Commands:")
-    print("    /exit              Exit the coding agent")
-    print("    /read <file>       Read a file's contents")
-    print("    /write <file>      Write content to a file (then paste, Ctrl+Z to end)")
-    print("    /list [dir]        List files in directory")
-    print("    /delete <file>     Delete a file")
-    print("    /analyze <file>    Show file stats (size, lines, extension)")
-    print("    /help              Show this help")
-    print()
-
-
 def handle_command(cmd: str, agent: CodingAgent):
     parts = cmd.split(maxsplit=1)
     action = parts[0].lower()
@@ -34,16 +12,16 @@ def handle_command(cmd: str, agent: CodingAgent):
     if action == "/read":
         result = wf.read_file(target)
         if result["success"]:
-            print(f"\n  --- {target} ---")
+            print(f"  --- {target} ---")
             print(f"  {result['content']}")
             if not result["content"].endswith("\n"):
                 print()
         else:
-            print(f"\n  Error: {result['error']}")
+            print(f"  Error: {result['error']}")
         return True
 
     if action == "/write":
-        print(f"\n  Paste the file content. Press Enter, then Ctrl+Z then Enter to finish:")
+        print("  Paste content. Ctrl+Z then Enter to finish:")
         lines = []
         try:
             while True:
@@ -54,7 +32,7 @@ def handle_command(cmd: str, agent: CodingAgent):
         content = "\n".join(lines)
         result = wf.write_file(target, content)
         if result["success"]:
-            print(f"  \u2713 {target} written")
+            print(f"  written {target}")
         else:
             print(f"  Error: {result['error']}")
         return True
@@ -62,19 +40,16 @@ def handle_command(cmd: str, agent: CodingAgent):
     if action == "/list":
         result = wf.list_files(target)
         if result["success"]:
-            print(f"\n  Files in {target}/:")
             for f in result["files"]:
-                print(f"    {f}")
+                print(f"  {f}")
             if not result["files"]:
-                print("    (empty)")
+                print("  (empty)")
         else:
-            # Try as read_directory
             r2 = wf.read_directory(target)
             if r2["success"]:
-                print(f"\n  {target}/:")
                 for e in r2["entries"]:
                     marker = "/" if e["type"] == "directory" else ""
-                    print(f"    {e['name']}{marker}")
+                    print(f"  {e['name']}{marker}")
             else:
                 print(f"  Error: {r2['error']}")
         return True
@@ -82,7 +57,7 @@ def handle_command(cmd: str, agent: CodingAgent):
     if action == "/delete":
         result = wf.delete_file(target)
         if result["success"]:
-            print(f"  \u2713 {target} deleted")
+            print(f"  deleted {target}")
         else:
             print(f"  Error: {result['error']}")
         return True
@@ -90,10 +65,7 @@ def handle_command(cmd: str, agent: CodingAgent):
     if action == "/analyze":
         result = wf.analyze_file(target)
         if result["success"]:
-            print(f"\n  {target}:")
-            print(f"    Size: {result['size_bytes']} bytes")
-            print(f"    Lines: {result['lines']}")
-            print(f"    Type: {result['extension'] or '(no extension)'}")
+            print(f"  {target}: {result['size_bytes']} bytes, {result['lines']} lines, {result['extension'] or '(no ext)'}")
         else:
             print(f"  Error: {result['error']}")
         return True
@@ -105,73 +77,72 @@ def display_result(result: dict):
     rtype = result.get("type", "")
 
     if rtype == "clarify":
-        print(f"\n  I need some clarification:")
         for q in result.get("questions", []):
-            print(f"    ? {q}")
-        print()
+            print(f"  ? {q}")
         return
 
     explanation = result.get("explanation") or result.get("response") or result.get("root_cause", "")
 
     if rtype == "answer":
-        print(f"\n  {explanation}\n")
+        print(f"  {explanation}")
         return
 
     if result.get("root_cause"):
-        print(f"\n  Root cause: {result['root_cause']}")
+        print(f"  root cause: {result['root_cause']}")
 
     if explanation:
-        for line in explanation.split("\n"):
-            if line.strip():
-                print(f"  {line}")
+        print(f"  {explanation}")
 
     saved = result.get("saved", [])
     if saved:
-        print(f"\n  \u2713 Written to disk ({len(saved)} files):")
+        print(f"  written {len(saved)} files:")
         for path in saved:
             print(f"    {path}")
-        print()
 
     files = result.get("files", {})
     if files and not saved:
-        print(f"\n  Generated {len(files)} files:")
+        print(f"  generated {len(files)} files:")
         for path in files:
             print(f"    {path}")
-        print()
 
 
 def main():
     start_dir = os.getcwd()
     agent = CodingAgent(project_dir=start_dir)
-    print_banner(start_dir)
-    sys.stdout.flush()
+    print(f"  coding agent — {start_dir}")
+    print()
 
     while True:
         try:
-            raw = input("  You: ").strip()
+            raw = input("> ").strip()
         except (EOFError, KeyboardInterrupt):
-            print("\n\n  Goodbye!")
+            print("\n  goodbye!")
             break
 
         if not raw:
             continue
 
         if raw == "/exit":
-            print("\n  Goodbye!")
+            print("  goodbye!")
             break
 
         if raw == "/help":
-            print_help()
+            print("  /exit              Exit")
+            print("  /read <file>       Read a file")
+            print("  /write <file>      Write to a file")
+            print("  /list [dir]        List files")
+            print("  /delete <file>     Delete a file")
+            print("  /analyze <file>    Show file stats")
+            print("  or just ask what to do in natural language")
             continue
 
         if raw.startswith("/"):
             handled = handle_command(raw, agent)
             if handled:
                 continue
-            print(f"  Unknown command: {raw.split()[0]}. Type /help")
+            print(f"  unknown: {raw.split()[0]}. try /help")
             continue
 
-        print()
         result = agent.process(raw)
         display_result(result)
 
