@@ -6,7 +6,7 @@ pillow
 rich
 requests
 cohere
-googlesearch-python
+tavily-python
 selenium
 mtranslate
 # pygame  # Commented out due to Windows/Python 3.14 compatibility issues
