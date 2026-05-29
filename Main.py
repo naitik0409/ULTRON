@@ -3,7 +3,8 @@ import asyncio
 import os
 
 from Backend.TextToSpeech import TextToSpeech, TTS
-from Backend.SpeechToText import SpeechRecognition
+from Backend.STT import SpeechRecognition, voice_analysis
+from Backend.STT.recorder import record_audio
 from Backend.MicControl import is_active, start_listener
 from Backend.brain import Brain
 from Backend.brain.memory import store_chat_message, initialize_chat_log
@@ -124,6 +125,11 @@ async def main():
                     await asyncio.sleep(0.5)
 
             print("  > Listening...")
+
+            audio = record_audio(duration=5)
+            if audio is not None:
+                voice_analysis.analyze(audio)
+
             user_input = SpeechRecognition().strip()
 
             if not user_input:
@@ -142,7 +148,13 @@ async def main():
 
             print(f"\n  {Username}: {user_input}")
 
-            result = brain.process(user_input)
+            voice_summary = voice_analysis.get_summary()
+            if voice_summary:
+                augmented_input = f"{user_input} [voice: {voice_summary}]"
+            else:
+                augmented_input = user_input
+
+            result = brain.process(augmented_input)
 
             if result["action"] == "exit":
                 print(f"\n  {Assistantname}: {result['response']}")

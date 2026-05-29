@@ -13,3 +13,6 @@ mtranslate
 # pygame  # Commented out due to Windows/Python 3.14 compatibility issues
 edge-tts
 webdriver-manager
+numpy
+sounddevice
+scipy
