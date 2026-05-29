@@ -4,106 +4,70 @@ from .agentic_ai import CodingAgent
 from . import workflow as wf
 
 
-def handle_command(cmd: str, agent: CodingAgent):
+def handle_command(cmd: str, agent: CodingAgent) -> dict:
     parts = cmd.split(maxsplit=1)
     action = parts[0].lower()
     target = parts[1].strip() if len(parts) > 1 else "."
 
     if action == "/read":
         result = wf.read_file(target)
-        if result["success"]:
-            print(f"  --- {target} ---")
-            print(f"  {result['content']}")
-            if not result["content"].endswith("\n"):
-                print()
-        else:
-            print(f"  Error: {result['error']}")
-        return True
+        return result
 
     if action == "/write":
-        print("  Paste content. Ctrl+Z then Enter to finish:")
-        lines = []
-        try:
-            while True:
-                line = input()
-                lines.append(line)
-        except EOFError:
-            pass
-        content = "\n".join(lines)
-        result = wf.write_file(target, content)
-        if result["success"]:
-            print(f"  written {target}")
-        else:
-            print(f"  Error: {result['error']}")
-        return True
+        return {"success": False, "error": "Use natural language to describe what to write, or use /read first.", "needs_content": True}
 
     if action == "/list":
         result = wf.list_files(target)
         if result["success"]:
-            for f in result["files"]:
-                print(f"  {f}")
-            if not result["files"]:
-                print("  (empty)")
-        else:
-            r2 = wf.read_directory(target)
-            if r2["success"]:
-                for e in r2["entries"]:
-                    marker = "/" if e["type"] == "directory" else ""
-                    print(f"  {e['name']}{marker}")
-            else:
-                print(f"  Error: {r2['error']}")
-        return True
+            return result
+        return wf.read_directory(target)
 
     if action == "/delete":
-        result = wf.delete_file(target)
-        if result["success"]:
-            print(f"  deleted {target}")
-        else:
-            print(f"  Error: {result['error']}")
-        return True
+        return wf.delete_file(target)
 
     if action == "/analyze":
-        result = wf.analyze_file(target)
-        if result["success"]:
-            print(f"  {target}: {result['size_bytes']} bytes, {result['lines']} lines, {result['extension'] or '(no ext)'}")
-        else:
-            print(f"  Error: {result['error']}")
-        return True
+        return wf.analyze_file(target)
 
-    return False
+    return {"success": False, "error": f"Unknown command: {action}. Try /read, /write, /list, /delete, /analyze"}
 
 
-def display_result(result: dict):
+def display_result(result: dict) -> str:
     rtype = result.get("type", "")
 
     if rtype == "clarify":
-        for q in result.get("questions", []):
-            print(f"  ? {q}")
-        return
+        questions = result.get("questions", [])
+        if questions:
+            return "I need some clarification. " + " ".join(f" {q}" for q in questions)
+        return "Could you clarify what you need?"
 
     explanation = result.get("explanation") or result.get("response") or result.get("root_cause", "")
 
     if rtype == "answer":
-        print(f"  {explanation}")
-        return
+        return explanation
 
+    parts = []
     if result.get("root_cause"):
-        print(f"  root cause: {result['root_cause']}")
-
+        parts.append(f"Root cause: {result['root_cause']}")
     if explanation:
-        print(f"  {explanation}")
+        parts.append(explanation)
 
     saved = result.get("saved", [])
     if saved:
-        print(f"  written {len(saved)} files:")
-        for path in saved:
-            print(f"    {path}")
+        parts.append(f"Written {len(saved)} files: {', '.join(saved)}")
 
     files = result.get("files", {})
     if files and not saved:
-        print(f"  generated {len(files)} files:")
-        for path in files:
-            print(f"    {path}")
+        parts.append(f"Generated {len(files)} files: {', '.join(files.keys())}")
+
+    return " ".join(parts) if parts else "Done."
+
+
+def format_for_speech(result: dict) -> str:
+    text = display_result(result)
+    sentences = text.split(".")
+    if len(sentences) > 3:
+        return ". ".join(sentences[:3]) + "."
+    return text
 
 
 def main():
@@ -137,14 +101,34 @@ def main():
             continue
 
         if raw.startswith("/"):
-            handled = handle_command(raw, agent)
-            if handled:
-                continue
-            print(f"  unknown: {raw.split()[0]}. try /help")
+            result = handle_command(raw, agent)
+            if result.get("success"):
+                if raw.startswith("/read"):
+                    print(f"  --- {raw.split(maxsplit=1)[1]} ---")
+                    print(f"  {result['content']}")
+                elif raw.startswith("/list"):
+                    files = result.get("files", [])
+                    entries = result.get("entries", [])
+                    if files:
+                        for f in files:
+                            print(f"  {f}")
+                    elif entries:
+                        for e in entries:
+                            marker = "/" if e["type"] == "directory" else ""
+                            print(f"  {e['name']}{marker}")
+                    if not files and not entries:
+                        print("  (empty)")
+                elif raw.startswith("/analyze"):
+                    target = raw.split(maxsplit=1)[1]
+                    print(f"  {target}: {result['size_bytes']} bytes, {result['lines']} lines, {result['extension'] or '(no ext)'}")
+                else:
+                    print(f"  {result.get('action', 'done')} {raw.split(maxsplit=1)[1]}")
+            else:
+                print(f"  Error: {result.get('error', 'unknown error')}")
             continue
 
         result = agent.process(raw)
-        display_result(result)
+        print(f"  {display_result(result)}")
 
 
 if __name__ == "__main__":

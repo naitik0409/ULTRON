@@ -6,3 +6,4 @@ __pycache__/
 *.pyc
 Data/ChatLog.json
 planning.txt
+Backend/brain/Brain_functioning.txt

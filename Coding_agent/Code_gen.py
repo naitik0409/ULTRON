@@ -3,7 +3,7 @@ import os
 from . import providers
 from . import knowledge
 
-SYSTEM = """You are an expert programmer. Given a solution plan, generate the actual code files.
+SYSTEM = """You are an expert software engineer generating production-ready code. Given a solution plan, generate complete, working files.
 
 Output ONLY a JSON object with this structure:
 {
@@ -15,11 +15,12 @@ Output ONLY a JSON object with this structure:
 }
 
 Rules:
-- Generate complete, working files — not snippets or placeholders
-- Follow best practices for the language/framework
-- Include imports, error handling, and comments where helpful
-- Use modern syntax and conventions
-- Generate all necessary files for a working project"""
+- Generate complete, working files — never snippets or placeholders
+- Follow language/framework best practices and conventions
+- Include proper imports, error handling, and edge cases
+- Use modern syntax and idiomatic patterns
+- Generate all files needed for a working project
+- Code must be production-quality and secure"""
 
 
 def run(plan: dict, session: dict) -> dict:

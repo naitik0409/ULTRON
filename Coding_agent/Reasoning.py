@@ -8,8 +8,8 @@ Your plan must include:
 3. Key implementation details — important logic, edge cases, data flow
 4. Dependencies — any packages, imports, or external services
 
-Focus on clarity and correctness. Think step by step.
-If the user wants an edit to existing code, analyze the current code first and plan minimal changes."""
+Focus on clarity, correctness, and professional-grade code.
+Think step by step. If the user wants an edit to existing code, analyze the current code first and plan minimal changes."""
 
 
 def run(intent: dict, session: dict) -> dict:

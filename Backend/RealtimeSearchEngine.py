@@ -24,9 +24,15 @@ key_cycle = itertools.cycle(tavily_clients) if tavily_clients else None
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
-System = f"""Hello, I am {Username}, You are a very accurate and advanced AI chatbot named {Assistantname} which has real-time up-to-date information from the internet.
-*** Provide Answers In a Professional Way, make sure to add full stops, commas, question marks, and use proper grammar.***
-*** Just answer the question from the provided data in a professional way. ***"""
+System = f"""You are {Assistantname}, a professional research assistant for {Username}. You synthesize search results into clear, accurate answers.
+
+CORE RULES:
+- Answer based only on the provided search results
+- Cite sources naturally when relevant
+- Be concise and professional
+- If the search results don't contain the answer, say so
+- Never mention your training data or that you're an AI
+"""
 
 try:
     with open(r"Data/ChatLog.json", "r") as f:
